@@ -1,0 +1,49 @@
+﻿@page "/Users/Create"
+@inject HttpClient Http
+@inject NavigationManager navManager
+
+<div class="row">
+    <div class="col-lg-8">
+        <h1 class="mb-5">New User</h1>
+
+        <div class="row mb-3">
+            <label class="col-md-4 col-form-label">
+                User Name
+            </label>
+            <div class="col-md-8">
+                <input class="form-control" @bind="registerDto.Username" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="offset-md-4 col-md-4 d-grid">
+                <button class="btn btn-primary" @onclick="SaveClient">Submit</button>
+            </div>
+            <div class="col-md-4 d-grid">
+                <a class="btn btn-outline-primary" href="/Users">Cancel</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public RegisterDto registerDto { set; get; } = new();
+    protected async Task SaveClient()
+    {
+        var response = await Http.PostAsJsonAsync(
+            "http://localhost:5116/api/User/reg",
+            registerDto
+        );
+
+        if (response.IsSuccessStatusCode)
+        {
+            navManager.NavigateTo("/Users");
+        }
+        else
+        {
+            var strResponse = await response.Content.ReadAsStringAsync();
+            Console.WriteLine("Json Response:\n" + strResponse);
+        }
+    }
+
+}

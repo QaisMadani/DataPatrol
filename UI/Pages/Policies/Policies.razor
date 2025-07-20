@@ -1,0 +1,173 @@
+﻿@page "/Policies"
+@inject IHttpClientFactory ClientFactory
+
+<h3>Policies</h3>
+<a class="btn btn-primary mb-3" href="/Policies/Create">New Policy</a>
+
+@if (policies == null)
+{
+    <p><em>Loading…</em></p>
+}
+else if (!policies.Any())
+{
+    <p><em>No policies found.</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Policy ID</th>
+                <th>Name</th>
+                <th>Default</th>
+                <th>Type</th>
+                <th>Enabled</th>
+                <th style="min-width:240px">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var pol in policies)
+            {
+                <tr>
+                    <td>@pol.PolicyId</td>
+                    <td>@pol.PolicyName</td>
+                    <td>@(pol.IsDefault ? "✔️" : "❌")</td>
+                    <td>@pol.PolicyType</td>
+                    <td>@(pol.IsEnabled ? "✔️" : "❌")</td>
+                    <td style="white-space: nowrap">
+                        <a class="btn btn-sm btn-primary" href="/Policies/Edit/@pol.PolicyId">
+                            Edit
+                        </a>
+                        <button class="btn btn-sm btn-danger ms-1"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteModal-@pol.PolicyId">
+                            Delete
+                        </button>
+                        <button class="btn btn-sm btn-info ms-1"
+                                data-bs-toggle="modal"
+                                data-bs-target="#groupsModal-@pol.PolicyId">
+                            Assign Groups
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @foreach (var pol in policies)
+    {
+        <div class="modal fade" id="deleteModal-@pol.PolicyId" tabindex="-1"
+             aria-labelledby="deleteLabel-@pol.PolicyId" aria-hidden="true">
+            <div class="modal-dialog modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteLabel-@pol.PolicyId">
+                            Confirm Delete
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        Delete policy <strong>@pol.PolicyName</strong>?
+                    </div>
+                    <div class="modal-footer p-2">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+                            Cancel
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm"
+                                @onclick="() => ConfirmDelete(pol.PolicyId)"
+                                data-bs-dismiss="modal">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @foreach (var pol in policies)
+    {
+        <div class="modal fade" id="groupsModal-@pol.PolicyId" tabindex="-1"
+             aria-labelledby="groupsLabel-@pol.PolicyId" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="groupsLabel-@pol.PolicyId">
+                            Assign "@pol.PolicyName" for Groups
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        @foreach (var grp in allGroups!)
+                        {
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                       id="chk-@pol.PolicyId-@grp.GroupId"
+                                       @onchange="e => {
+                                       if ((bool)e.Value) groupSelection[pol.PolicyId].Add(grp.GroupId);
+                                       else groupSelection[pol.PolicyId].Remove(grp.GroupId);
+                                   }"
+                                     checked="@groupSelection[pol.PolicyId].Contains(grp.GroupId)" />
+                              <label class="form-check-label" for="chk-@pol.PolicyId-@grp.GroupId">
+                                  @grp.Description
+                              </label>
+                          </div>
+                    }
+                </div>
+                <div class="modal-footer p-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-info btn-sm"
+                            @onclick="() => ConfirmAssignGroups(pol.PolicyId)"
+                            data-bs-dismiss="modal">
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+}
+
+@code {
+    private List<Policy>? policies;
+    private List<UserGroup>? allGroups;
+    private Dictionary<string, HashSet<string>> groupSelection = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPolicies();
+        await LoadGroups();
+    }
+
+    private async Task LoadPolicies()
+    {
+        var api = ClientFactory.CreateClient("api");
+        policies = await api.GetFromJsonAsync<List<Policy>>("api/Policy");
+        groupSelection = policies.ToDictionary(
+          p => p.PolicyId,
+          p => p.Groups.Select(pg => pg.GroupId).ToHashSet()
+        );
+    }
+
+    private async Task LoadGroups()
+    {
+        var api = ClientFactory.CreateClient("api");
+        allGroups = await api.GetFromJsonAsync<List<UserGroup>>("api/Group");
+    }
+
+    private async Task ConfirmDelete(string id)
+    {
+        var api = ClientFactory.CreateClient("api");
+        await api.DeleteAsync($"api/Policy/{Uri.EscapeDataString(id)}");
+        await LoadPolicies();
+    }
+
+    private async Task ConfirmAssignGroups(string id)
+    {
+        var api = ClientFactory.CreateClient("api");
+        var list = groupSelection[id].ToList();
+        await api.PostAsJsonAsync($"api/Policy/{Uri.EscapeDataString(id)}/groups", list);
+        await LoadPolicies();
+    }
+}

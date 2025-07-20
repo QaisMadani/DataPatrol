@@ -1,0 +1,129 @@
+﻿@page "/Requests"
+@page "/Requests/{UserID}"
+@using DAL.Models
+@using System.Net.Http.Json
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager   NavManager
+
+<h3>
+    User Requests
+    @if (!string.IsNullOrEmpty(UserID))
+    {
+        <span>for “@UserID”</span>
+    }
+</h3>
+
+<a class="btn btn-primary mb-3" href="/Requests/Create">New Request</a>
+
+@if (requests == null)
+{
+    <p><em>Loading…</em></p>
+}
+else if (!requests.Any())
+{
+    <p><em>No requests found.</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Request ID</th>
+                <th>User</th>
+                <th>Code</th>
+                <th>Status</th>
+                <th>Requested At</th>
+                <th>Completed At</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var req in requests)
+            {
+                <tr>
+                    <td>@req.RequestId</td>
+                    <td>@req.RequestedBy</td>
+                    <td>@req.RequestCode</td>
+                    <td>@req.Status</td>
+                    <td>@req.RequestDateTime.ToLocalTime().ToString("g")</td>
+                    <td>@(req.CompletionDateTime?.ToLocalTime().ToString("g") ?? "-")</td>
+                    <td style="white-space: nowrap">
+                        @if (req.Status == RequestStatus.Draft 
+                            || req.Status == RequestStatus.InReview)
+                        {
+                            <a class="btn btn-sm btn-primary" 
+                               href="/Requests/Edit/@req.RequestId">
+                                Edit
+                            </a>
+                        }
+                        <button class="btn btn-sm btn-secondary ms-1"
+                                @onclick='() => NavManager.NavigateTo($"/Requests/{Uri.EscapeDataString(req.RequestedBy)}")'>
+                            by “@req.RequestedBy”
+                        </button>
+                        <button class="btn btn-sm btn-danger ms-1"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteReq-@req.RequestId">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @foreach (var req in requests)
+    {
+      <div class="modal fade" id="deleteReq-@req.RequestId" tabindex="-1"
+           aria-labelledby="deleteReqLabel-@req.RequestId" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="deleteReqLabel-@req.RequestId">
+                Confirm Delete
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              Delete request <strong>#@req.RequestId</strong>?
+            </div>
+            <div class="modal-footer p-2">
+              <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+                Cancel
+              </button>
+              <button type="button" class="btn btn-danger btn-sm"
+                      @onclick="() => ConfirmDelete(req.RequestId)"
+                      data-bs-dismiss="modal">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+}
+
+@code {
+    [Parameter] public string? UserID { get; set; }
+    private List<UserRequest>? requests;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var api = ClientFactory.CreateClient("api");
+        if (!string.IsNullOrEmpty(UserID))
+        {
+            requests = await api.GetFromJsonAsync<List<UserRequest>>(
+                $"api/User/{Uri.EscapeDataString(UserID)}/requests");
+        }
+        else
+        {
+            requests = await api.GetFromJsonAsync<List<UserRequest>>("api/Request");
+        }
+    }
+
+    private async Task ConfirmDelete(long id)
+    {
+        var api = ClientFactory.CreateClient("api");
+        await api.DeleteAsync($"api/Request/{id}");
+        await OnParametersSetAsync();
+    }
+}

@@ -1,0 +1,60 @@
+﻿@page "/"
+
+<div class="container mt-4">
+    <h1>Welcome to Data Patrol</h1>
+
+    <p class="lead">
+        This application is the technical assignment deliverable for DataPatrol’s Full‑Stack Developer role.
+        It demonstrates a complete end‑to‑end solution built with modern ASP.NET Core and Blazor.
+    </p>
+
+    <h5>Key Features:</h5>
+    <ul>
+        <li>
+            <strong>Data Model &amp; Multi‑Tenancy Ready</strong><br />
+            EF Core entities for Users, Groups, Policies, Requests, with many‑to‑many mappings and cascade rules.
+        </li>
+        <br>
+        <li>
+            <strong>Repository &amp; Unit‑of‑Work Pattern</strong><br />
+            Clean data‑access abstraction (IGenericRepository, UnitOfWork) for OOP, testability, and SRP.
+        </li>
+        <br>
+        <li>
+            <strong>Design Patterns &amp; OOP</strong><br />
+            Generic repositories, DI, DTO mapping, and inheritance used throughout for maintainability.
+        </li>
+        <br>
+        <li>
+            <strong>Memory Management</strong><br />
+            <ul>
+                <li>DbContext scoped and disposed automatically by DI container.</li>
+                <li>.AsNoTracking() on all read‑only queries to avoid change‑tracker bloat.</li>
+                <li>Optional DbContext pooling enabled to reduce allocations under load.</li>
+            </ul>
+        </li>
+        <br>
+        <li>
+            <strong>Blazor Server UI</strong><br />
+            MudBlazor+Bootstrap for responsive pages, modals, and client‑side routing.
+        </li>
+        <br>
+        <li>
+            <strong>RESTful API Endpoints</strong><br />
+            • POST /api/User/reg for registration<br />
+            • POST /api/Request/create and POST /api/Request/summary<br />
+            • Full CRUD on Users, Groups, Policies, Requests<br />
+            • GET /api/Random 
+        </li>
+        <br>
+        <li>
+            <strong>Background Worker</strong><br />
+            Processes pending requests every 10 seconds, updating status with error handling.
+        </li>
+    </ul>
+    <br>
+    <p>
+        Use the navigation menu to explore and manage each section.
+        Feel free to drill into Users, User Groups, Policies, or User Requests to see full create/edit/delete flows.
+    </p>
+</div>

@@ -1,0 +1,59 @@
+﻿@page "/requests/summary"
+@inject IHttpClientFactory ClientFactory
+@using System.Net.Http.Json
+@using MudBlazor
+
+<MudPaper Class="pa-6 mx-auto mt-5" MaxWidth="600px">
+    <MudText Typo="Typo.h5">Request Summary</MudText>
+
+    <MudTextField T="string"
+                  Label="User ID"
+                  @bind-Value="UserId"
+                  Variant="Variant.Outlined"
+                  Class="mt-4" />
+
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               Class="mt-4"
+               OnClick="LoadRequestSummary">
+        Load Summary
+    </MudButton>
+
+    @if (SummaryList != null)
+    {
+        <MudTable Items="SummaryList"
+                  Hover="true"
+                  Class="mt-4">
+            <HeaderContent>
+                <MudTh>Status</MudTh>
+                <MudTh>Count</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Status</MudTd>
+                <MudTd>@context.Count</MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+</MudPaper>
+
+@code {
+    private string UserId = "";
+    private List<SummaryItem>? SummaryList;
+
+    private async Task LoadRequestSummary()
+    {
+        SummaryList = null;
+        var client = ClientFactory.CreateClient("api");
+        var response = await client.PostAsJsonAsync("request/summary", new { UserId });
+        if (response.IsSuccessStatusCode)
+        {
+            SummaryList = await response.Content.ReadFromJsonAsync<List<SummaryItem>>();
+        }
+    }
+
+    private class SummaryItem
+    {
+        public string Status { get; set; } = "";
+        public int Count { get; set; }
+    }
+}

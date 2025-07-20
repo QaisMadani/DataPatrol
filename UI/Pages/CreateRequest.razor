@@ -1,0 +1,80 @@
+﻿@page "/requests/create"
+@inject IHttpClientFactory ClientFactory
+@using System.Net.Http.Json
+@using MudBlazor
+
+<MudPaper Class="pa-6 mx-auto mt-5" MaxWidth="600px">
+    <MudText Typo="Typo.h5">Create User Request</MudText>
+
+    <MudTextField T="string"
+                  Label="User ID"
+                  @bind-Value="UserId"
+                  Variant="Variant.Outlined"
+                  Class="mt-4" />
+
+    <MudNumericField T="int"
+                     Label="Request Code"
+                     @bind-Value="RequestCode"
+                     Variant="Variant.Outlined"
+                     Class="mt-4" />
+
+    <MudTextField T="string"
+                  Label="Description"
+                  @bind-Value="Description"
+                  Variant="Variant.Outlined"
+                  Lines="3"
+                  Class="mt-4" />
+
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               Class="mt-4"
+               OnClick="SubmitRequest">
+        Create
+    </MudButton>
+
+    @if (ResultMessage != null)
+    {
+        <MudAlert Severity="@AlertSeverity"
+                  Dense
+                  Class="mt-3">
+            @ResultMessage
+        </MudAlert>
+    }
+</MudPaper>
+
+@code {
+    private string UserId = "";
+    private int RequestCode;
+    private string Description = "";
+    private string? ResultMessage;
+    private MudBlazor.Severity AlertSeverity = MudBlazor.Severity.Success;
+
+    private async Task SubmitRequest()
+    {
+        ResultMessage = null;
+        var client = ClientFactory.CreateClient("api");
+        var dto = new { UserId, RequestCode, Description };
+        var response = await client.PostAsJsonAsync("request/create", dto);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var data = await response.Content.ReadFromJsonAsync<CreateResponse>();
+            ResultMessage = $"Request created with ID: {data?.RequestId}";
+            AlertSeverity = MudBlazor.Severity.Success;
+            // مسح الحقول
+            UserId = "";
+            RequestCode = 0;
+            Description = "";
+        }
+        else
+        {
+            ResultMessage = "Failed to create request.";
+            AlertSeverity = MudBlazor.Severity.Error;
+        }
+    }
+
+    private class CreateResponse
+    {
+        public long RequestId { get; set; }
+    }
+}

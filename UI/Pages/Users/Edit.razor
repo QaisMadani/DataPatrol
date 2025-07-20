@@ -1,0 +1,79 @@
+﻿@page "/Users/Edit/{userID}"
+@inject HttpClient Http
+@inject NavigationManager navManager
+
+
+<div class="row">
+    <div class="col-lg-8">
+        <h1 class="mb-5">Edit Client</h1>
+
+        @if (userDto == null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            <EditForm Model="userDto" OnValidSubmit="SaveUser">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="mb-3">
+                    <label class="form-label">First Name</label>
+                    <InputText class="form-control" @bind-Value="userDto.Username" />
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button class="btn btn-primary me-2" type="submit">Save</button>
+                    <button class="btn btn-secondary" type="button"
+                            @onclick='() => navManager.NavigateTo("/Users")'>
+                        Cancel
+                    </button>
+                </div>
+            </EditForm>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string userID { get; set; }
+    public UserDto userDto { get; set; } = new();
+    public JsonNode Errors { get; set; } = new JsonObject();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            userDto = await Http.GetFromJsonAsync<UserDto>($"http://localhost:5116/api/User/{userID}");
+        }
+        catch (Exception ex)
+        {
+            Errors["load"] = ex.Message;
+        }
+    }
+
+    protected async Task SaveUser()
+    {
+        var response = await Http.PutAsJsonAsync(
+            $"http://localhost:5116/api/User/{Uri.EscapeDataString(userID)}",
+            userDto
+        );
+        if (response.IsSuccessStatusCode)
+        {
+            navManager.NavigateTo("/Users");
+        }
+        else
+        {
+            var strResponse = await response.Content.ReadAsStringAsync();
+            try
+            {
+                var jsonResponse = JsonNode.Parse(strResponse);
+                Errors = jsonResponse?["errors"] ?? new JsonObject();
+            }
+            catch (Exception e)
+            {
+
+            }
+        }
+    }
+}

@@ -1,0 +1,53 @@
+﻿@page "/Policies/Create"
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager Nav
+
+<h3 class="mb-4">New Policy</h3>
+
+<EditForm Model="policyDto" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">Policy ID</label>
+        <InputText class="form-control" @bind-Value="policyDto.PolicyId" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Name</label>
+        <InputText class="form-control" @bind-Value="policyDto.PolicyName" />
+    </div>
+    <div class="form-check mb-3">
+        <InputCheckbox class="form-check-input" @bind-Value="policyDto.IsDefault" />
+        <label class="form-check-label">Is Default</label>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Type (int)</label>
+        <InputNumber class="form-control" @bind-Value="policyDto.PolicyType" />
+    </div>
+    <div class="form-check mb-3">
+        <InputCheckbox class="form-check-input" @bind-Value="policyDto.IsEnabled" />
+        <label class="form-check-label">Is Enabled</label>
+    </div>
+
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        <button class="btn btn-primary me-2" type="submit">Create</button>
+        <button class="btn btn-secondary" type="button"
+                @onclick='() => Nav.NavigateTo("/Policies")'>
+            Cancel
+        </button>
+    </div>
+</EditForm>
+
+@code {
+    private CreatePolicyDto policyDto = new();
+
+    private async Task HandleSubmit()
+    {
+        var api = ClientFactory.CreateClient("api");
+        var resp = await api.PostAsJsonAsync("api/Policy", policyDto);
+        if (resp.IsSuccessStatusCode)
+            Nav.NavigateTo("/Policies");
+        else
+            Console.Error.WriteLine(await resp.Content.ReadAsStringAsync());
+    }
+}

@@ -1,0 +1,68 @@
+﻿@page "/Requests/Create"
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager Nav
+
+<h3 class="mb-4">New Request</h3>
+
+<EditForm Model="requestDto" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">User</label>
+        <InputSelect class="form-control" @bind-Value="requestDto.UserId">
+            <option value="">-- Select a user --</option>
+            @if (users != null)
+            {
+                @foreach (var u in users)
+                {
+                    <option value="@u.UserId">@u.Username</option>
+                }
+            }
+        </InputSelect>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Request Code</label>
+        <InputNumber class="form-control" @bind-Value="requestDto.RequestCode" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Description</label>
+        <InputTextArea class="form-control" @bind-Value="requestDto.Description" Rows="3" />
+    </div>
+
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        <button class="btn btn-primary me-2" type="submit">Create</button>
+        <button class="btn btn-secondary" type="button"
+                @onclick='() => Nav.NavigateTo("/Requests")'>
+            Cancel
+        </button>
+    </div>
+</EditForm>
+
+@code {
+    private CreateRequestDto requestDto = new();
+    private List<User>? users;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var api = ClientFactory.CreateClient("api");
+        users = await api.GetFromJsonAsync<List<User>>("api/User");
+    }
+
+    private async Task HandleSubmit()
+    {
+        var api = ClientFactory.CreateClient("api");
+        var resp = await api.PostAsJsonAsync("api/Request", requestDto);
+        if (resp.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo("/Requests");
+        }
+        else
+        {
+            var err = await resp.Content.ReadAsStringAsync();
+            Console.Error.WriteLine($"Create failed: {err}");
+        }
+    }
+}
