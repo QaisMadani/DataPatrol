@@ -15,11 +15,17 @@ RESTful API Endpoints
 
 #Users
 POST /api/User/reg
+
 GET /api/User
+
 GET /api/User/{userId}
+
 PUT /api/User/{userId}
+
 DELETE /api/User/{userId}
+
 PUT /api/User/{userId}/toggle
+
 POST /api/User/{userId}/groups
 
 #User Requests
