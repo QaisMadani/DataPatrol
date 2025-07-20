@@ -1,9 +1,9 @@
 This repository contains my solution for the DataPatrol Full‑Stack Developer technical assignment.  
 It includes:
 
-- **ASP.NET Core Web API** (with EF Core, Repository/UoW, seed data, background worker)  
-- **Blazor Server UI** (MudBlazor + Bootstrap components)  
-- **Random Number API** for Task 2
+- ASP.NET Core Web API (with EF Core, Repository/UoW, seed data, background worker)  
+- Blazor Server UI (Blazor + Bootstrap components)  
+- Random Number API for Task 2
 
 #Apply EF Migrations & Seed Data
 
